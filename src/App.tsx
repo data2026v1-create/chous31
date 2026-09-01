@@ -6,6 +6,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import CartDrawer from "./components/CartDrawer";
 import Toasts from "./components/Toasts";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Home from "./pages/Home";
 import Popular from "./pages/Popular";
 import ProductDetail from "./pages/ProductDetail";
@@ -72,10 +73,12 @@ export default function App() {
   return (
     <StoreProvider>
       <I18nProvider>
-        <HashRouter>
-          <ScrollToTop />
-          <ThemeRoot />
-        </HashRouter>
+        <ErrorBoundary>
+          <HashRouter>
+            <ScrollToTop />
+            <ThemeRoot />
+          </HashRouter>
+        </ErrorBoundary>
       </I18nProvider>
     </StoreProvider>
   );

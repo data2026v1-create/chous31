@@ -29,6 +29,23 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Garde-fou anti-écran blanc : affiche l'erreur si l'application ne démarre pas -->
+    <script>
+      window.addEventListener("error", function (e) {
+        var root = document.getElementById("root");
+        if (root && root.children.length === 0) {
+          root.innerHTML =
+            "<div style='font-family:system-ui,sans-serif;max-width:480px;margin:80px auto;padding:28px;border:1px solid #eee;border-radius:16px;text-align:center;color:#333'>" +
+            "<div style='font-size:40px'>⚠️</div>" +
+            "<h1 style='font-size:20px;margin:12px 0 6px'>Impossible de charger l'application / تعذر تحميل التطبيق</h1>" +
+            "<p style='font-size:13px;color:#777;word-break:break-word'>" +
+            (e.message || "Erreur inconnue") +
+            "</p>" +
+            "<p style='font-size:13px;color:#777'>Rechargez la page ou videz le cache du navigateur.</p>" +
+            "</div>";
+        }
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

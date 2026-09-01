@@ -1,76 +1,24 @@
-import {
-  Component,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import { Canvas } from "@react-three/fiber";
-import {
-  Bounds,
-  ContactShadows,
-  OrbitControls,
-  useGLTF,
-  useProgress,
-} from "@react-three/drei";
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 /**
- * Modèle 3D de sneaker (GLTF public, utilisé dans les tutoriels R3F).
- * Alternative de repli si le premier CDN est indisponible.
+ * Visualiseur 3D du produit — implémenté en THREE.js PUR (sans
+ * react-three-fiber ni drei) pour une compatibilité totale avec
+ * React 19 et éviter tout risque de plantage au chargement.
+ *
+ * - Modèle GLTF de sneaker chargé depuis un CDN public
+ *   (+ URL de secours en cas d'échec).
+ * - Rotation interactive + zoom (OrbitControls).
+ * - Ombres portées + ombre de contact au sol.
+ * - Si le chargement échoue (hors-ligne, WebGL désactivé…),
+ *   la fiche produit bascule automatiquement sur les photos.
  */
 const MODEL_URLS = [
   "https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/shoe/model.gltf",
   "https://raw.githubusercontent.com/pmndrs/market-assets/master/files/shoe.glb",
 ];
-
-function ShoeModel({ url }: { url: string }) {
-  const { scene } = useGLTF(url);
-  return <primitive object={scene} />;
-}
-
-/** Rendu d'une scène 3D : une URL donnée à la fois */
-function Scene({ url }: { url: string }) {
-  return (
-    <Suspense fallback={null}>
-      <Bounds fit clip observe margin={1.15} key={url}>
-        <ShoeModel url={url} />
-      </Bounds>
-      <ContactShadows position={[0, -1.35, 0]} opacity={0.4} scale={8} blur={2.6} far={3.2} />
-    </Suspense>
-  );
-}
-
-/** Signale la fin du chargement du modèle (hook drei) */
-function ProgressReporter({ onLoaded }: { onLoaded: () => void }) {
-  const { active } = useProgress();
-  const done = useRef(false);
-  useEffect(() => {
-    if (!active && !done.current) {
-      done.current = true;
-      onLoaded();
-    }
-  }, [active, onLoaded]);
-  return null;
-}
-
-/** Garde-fou : si le modèle ne peut pas être chargé, on informe le parent */
-class ModelErrorBoundary extends Component<
-  { onFail: () => void; children: ReactNode },
-  { failed: boolean }
-> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  componentDidCatch() {
-    this.props.onFail();
-  }
-  render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
 
 interface Product3DProps {
   onFail: () => void;
@@ -78,61 +26,171 @@ interface Product3DProps {
 }
 
 export default function Product3D({ onFail, onLoaded }: Product3DProps) {
-  /* Essai du premier CDN, puis du second en cas d'échec */
-  const [urlIndex, setUrlIndex] = useState(0);
+  const mountRef = useRef<HTMLDivElement | null>(null);
+  const onFailRef = useRef(onFail);
+  const onLoadedRef = useRef(onLoaded);
+  onFailRef.current = onFail;
+  onLoadedRef.current = onLoaded;
 
-  const tryNextUrl = useCallback(() => {
-    setUrlIndex((i) => {
-      if (i < MODEL_URLS.length - 1) return i + 1;
-      onFail(); // plus aucune URL disponible
-      return i;
-    });
-  }, [onFail]);
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
 
-  const handleFail = useCallback(() => {
-    if (urlIndex < MODEL_URLS.length - 1) {
-      tryNextUrl();
-    } else {
-      onFail();
+    /* ---------- Renderer WebGL (garde-fou : pas de WebGL → photos) ---------- */
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance",
+      });
+    } catch {
+      onFailRef.current();
+      return;
     }
-  }, [urlIndex, onFail, tryNextUrl]);
 
-  return (
-    <ModelErrorBoundary onFail={handleFail}>
-      <Canvas
-        shadows
-        dpr={[1, 1.75]}
-        camera={{ position: [0.4, 0.8, 5], fov: 32 }}
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-        style={{ position: "absolute", inset: 0 }}
-      >
-        {/* Éclairage studio */}
-        <ambientLight intensity={0.85} />
-        <directionalLight
-          position={[5, 7, 4]}
-          intensity={2.1}
-          castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
-        />
-        <directionalLight position={[-5, 3, -4]} intensity={0.7} color="#ffd9c2" />
-        <spotLight position={[0, 5, 2]} intensity={0.5} angle={0.5} penumbra={1} color="#ffffff" />
+    const initialW = mount.clientWidth || 1;
+    const initialH = mount.clientHeight || 1;
 
-        <Scene url={MODEL_URLS[urlIndex]} />
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    renderer.setSize(initialW, initialH);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.style.display = "block";
+    mount.appendChild(renderer.domElement);
 
-        <OrbitControls
-          autoRotate
-          autoRotateSpeed={1.7}
-          enablePan={false}
-          enableDamping
-          minDistance={2.6}
-          maxDistance={7.5}
-          maxPolarAngle={Math.PI / 1.9}
-          minPolarAngle={Math.PI / 4.5}
-        />
+    /* ---------- Scène & caméra ---------- */
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(32, initialW / initialH, 0.1, 100);
+    camera.position.set(0.4, 0.9, 5.2);
 
-        <ProgressReporter onLoaded={onLoaded} />
-      </Canvas>
-    </ModelErrorBoundary>
-  );
+    /* ---------- Éclairage studio ---------- */
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+
+    const key = new THREE.DirectionalLight(0xffffff, 2.2);
+    key.position.set(5, 7, 4);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.left = -6;
+    key.shadow.camera.right = 6;
+    key.shadow.camera.top = 6;
+    key.shadow.camera.bottom = -6;
+    key.shadow.camera.near = 1;
+    key.shadow.camera.far = 30;
+    key.shadow.bias = -0.0004;
+    scene.add(key);
+
+    const rim = new THREE.DirectionalLight(0xffd9c2, 0.8);
+    rim.position.set(-5, 3, -4);
+    scene.add(rim);
+
+    const spot = new THREE.SpotLight(0xffffff, 0.6, 20, Math.PI / 4, 1);
+    spot.position.set(0, 5, 2);
+    scene.add(spot);
+
+    /* ---------- Ombre de contact au sol ---------- */
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(12, 12),
+      new THREE.ShadowMaterial({ opacity: 0.35 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -1.35;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    /* ---------- Contrôles (rotation + zoom + auto-rotation) ---------- */
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0.05, 0);
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.7;
+    controls.enablePan = false;
+    controls.enableDamping = true;
+    controls.minDistance = 2.6;
+    controls.maxDistance = 7.5;
+    controls.minPolarAngle = Math.PI / 4.5;
+    controls.maxPolarAngle = Math.PI / 1.9;
+
+    renderer.setAnimationLoop(() => {
+      controls.update();
+      renderer.render(scene, camera);
+    });
+
+    /* ---------- Responsive ---------- */
+    const resizeObserver = new ResizeObserver(() => {
+      const w = mount.clientWidth || 1;
+      const h = mount.clientHeight || 1;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+    resizeObserver.observe(mount);
+
+    /* ---------- Chargement du modèle (avec URL de secours) ---------- */
+    const loader = new GLTFLoader();
+    let model: THREE.Object3D | null = null;
+    let disposed = false;
+
+    const loadIndex = (index: number) => {
+      if (disposed) return;
+      if (index >= MODEL_URLS.length) {
+        onFailRef.current();
+        return;
+      }
+      loader.load(
+        MODEL_URLS[index],
+        (gltf) => {
+          if (disposed) return;
+          model = gltf.scene;
+
+          /* Mise à l'échelle + centrage + pose au sol */
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z) || 1;
+          const scale = 2.1 / maxDim;
+          model.scale.setScalar(scale);
+          model.position.y = -1.35 - box.min.y * scale;
+
+          model.traverse((obj) => {
+            const mesh = obj as THREE.Mesh;
+            if (mesh.isMesh) {
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+            }
+          });
+          scene.add(model);
+          onLoadedRef.current();
+        },
+        undefined,
+        (err) => {
+          // Premier CDN indisponible → on essaie le suivant
+          console.warn("[StepStore] Modèle 3D indisponible :", err);
+          loadIndex(index + 1);
+        }
+      );
+    };
+    loadIndex(0);
+
+    /* ---------- Nettoyage complet ---------- */
+    return () => {
+      disposed = true;
+      resizeObserver.disconnect();
+      renderer.setAnimationLoop(null);
+      controls.dispose();
+      scene.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.geometry?.dispose();
+          const mat = mesh.material as THREE.Material | THREE.Material[];
+          if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+          else mat?.dispose();
+        }
+      });
+      renderer.dispose();
+      if (renderer.domElement.parentElement === mount) {
+        mount.removeChild(renderer.domElement);
+      }
+    };
+  }, []);
+
+  return <div ref={mountRef} className="absolute inset-0" aria-hidden="true" />;
 }

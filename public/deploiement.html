@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StepStore — Guide de déploiement détaillé (GitHub Pages + Google Sheets + WhatsApp)</title>
+  <style>
+    :root { --orange: #ff5c1a; --dark: #101010; --line: #eee6df; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #faf7f4; color: var(--dark); line-height: 1.65;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 24px 20px 80px; }
+    header.hero {
+      background: var(--dark); color: #fff; border-radius: 24px;
+      padding: 40px 32px; position: relative; overflow: hidden;
+    }
+    header.hero::after {
+      content: ""; position: absolute; right: -60px; top: -60px;
+      width: 260px; height: 260px; border-radius: 50%;
+      background: var(--orange); opacity: .25; filter: blur(60px);
+    }
+    header.hero .badge {
+      display: inline-block; background: var(--orange); color: #fff;
+      border-radius: 999px; padding: 5px 14px; font-size: 12px;
+      font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    }
+    header.hero h1 { font-size: 28px; margin-top: 14px; line-height: 1.25; }
+    header.hero p { color: #cfc9c4; margin-top: 10px; font-size: 15px; max-width: 600px; }
+    h2 { font-size: 21px; margin: 46px 0 6px; display: flex; align-items: center; gap: 10px; }
+    h2 .num {
+      background: var(--orange); color: #fff; width: 30px; height: 30px;
+      display: inline-grid; place-items: center; border-radius: 9px;
+      font-size: 15px; flex: none;
+    }
+    .sub { color: #8a827a; font-size: 14px; margin-bottom: 10px; }
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      padding: 20px 22px; margin-top: 14px;
+    }
+    ol.steps { list-style: none; counter-reset: step; }
+    ol.steps li { counter-increment: step; margin: 13px 0; padding-left: 42px; position: relative; font-size: 15px; }
+    ol.steps li::before {
+      content: counter(step); position: absolute; left: 0; top: 1px;
+      width: 26px; height: 26px; border-radius: 8px; background: #fff1ea;
+      color: var(--orange); font-weight: 800; display: grid; place-items: center;
+      border: 1.5px solid #ffd9c7; font-size: 13px;
+    }
+    code.inline {
+      background: #fff1ea; color: #c2410c; border-radius: 6px;
+      padding: 2px 7px; font-size: 13px; font-family: Consolas, Menlo, monospace;
+    }
+    pre {
+      background: #0d1117; color: #d7e0e8; border-radius: 14px;
+      padding: 18px 20px; overflow-x: auto; font-size: 13px;
+      font-family: Consolas, Menlo, monospace; line-height: 1.55; margin-top: 12px;
+    }
+    pre .c { color: #7d8790; }
+    pre .o { color: #ff9b6a; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    th { color: #8a827a; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    td:first-child { font-family: Consolas, Menlo, monospace; font-size: 13px; color: #c2410c; }
+    .warn {
+      background: #fff8e6; border: 1px solid #ffe4a8; color: #7c5a00;
+      border-radius: 12px; padding: 14px 16px; font-size: 14px; margin-top: 14px;
+    }
+    .ok {
+      background: #e9f9ef; border: 1px solid #b5e8c8; color: #14622f;
+      border-radius: 12px; padding: 14px 16px; font-size: 14px; margin-top: 14px;
+    }
+    .checklist { list-style: none; margin-top: 12px; }
+    .checklist li {
+      display: flex; gap: 10px; align-items: flex-start; padding: 8px 0;
+      border-bottom: 1px dashed var(--line); font-size: 14px;
+    }
+    .checklist li::before { content: "☐"; color: var(--orange); font-size: 17px; }
+    @media (max-width: 640px) { header.hero h1 { font-size: 22px; } }
+    footer { margin-top: 56px; text-align: center; color: #a39b93; font-size: 13px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="badge">Livrable — mode déploiement</span>
+    <h1>StepStore · Guide de déploiement détaillé<br />GitHub Pages + Google Sheets + WhatsApp + Vue 3D</h1>
+    <p>Boutique de sneakers bilingue FR/AR, devise DZD, présentation produit 3D, commande par redirection WhatsApp et panneau d'administration complet. Suivez ce guide pas à pas.</p>
+  </header>
+
+  <!-- ============ 0. PRÉREQUIS ============ -->
+  <h2><span class="num">0</span> Prérequis</h2>
+  <div class="card">
+    <ul style="margin-left:20px;font-size:14px">
+      <li>Un compte <b>GitHub</b> (gratuit) : <code class="inline">github.com</code></li>
+      <li>Un compte <b>Google</b> (pour Google Sheets + Apps Script)</li>
+      <li>Un navigateur récent (Chrome, Firefox, Edge, Safari)</li>
+      <li>Optionnel : <b>Node.js</b> installé si vous voulez regénérer le build</li>
+    </ul>
+  </div>
+
+  <!-- ============ 1. FICHIERS ============ -->
+  <h2><span class="num">1</span> Les fichiers à déployer</h2>
+  <p class="sub">Le dossier <code class="inline">dist/</code> (généré par <code class="inline">npm run build</code>) contient <b>exactement</b> les fichiers à déployer&nbsp;:</p>
+  <div class="card">
+    <pre>dist/
+├── <span class="o">index.html</span>             ← L'APPLICATION COMPLÈTE (boutique + panier + admin)
+│                               · Bilingue FR / AR (RTL) · Devise DZD
+│                               · Produit en 3D interactif (WebGL)
+│                               · Commande par redirection WhatsApp
+│                               · PWA installable (manifest + service worker)
+├── <span class="o">Code.gs</span>               ← à coller dans Google Apps Script (base de données)
+├── <span class="o">deploiement.html</span>       ← ce guide (facultatif)
+├── manifest.webmanifest      ← PWA : nom, couleurs, icônes
+├── sw.js                     ← PWA : cache hors-ligne
+└── icons/
+    └── icon-512.png          ← icône installable</pre>
+    <table>
+      <tr><th>Fichier</th><th>Rôle</th><th>Où le déployer</th></tr>
+      <tr><td>index.html</td><td>Application e-commerce complète (un seul fichier)</td><td>GitHub Pages</td></tr>
+      <tr><td>Code.gs</td><td>API lecture/écriture Google Sheets</td><td>Google Apps Script</td></tr>
+      <tr><td>deploiement.html</td><td>Guide de déploiement</td><td>GitHub Pages (optionnel)</td></tr>
+      <tr><td>manifest.webmanifest + sw.js + icons/</td><td>Progressive Web App</td><td>GitHub Pages</td></tr>
+    </table>
+    <div class="ok">✅ Le routage est en mode <b>hash</b> : l'application fonctionne sur n'importe quel hébergement statique, sans configuration serveur.</div>
+  </div>
+
+  <!-- ============ 2. GITHUB ============ -->
+  <h2><span class="num">2</span> Publier sur GitHub &amp; activer GitHub Pages</h2>
+  <p class="sub">Deux méthodes : via l'interface web (la plus simple) ou via Git (recommandé pour les mises à jour).</p>
+
+  <div class="card">
+    <h3 style="font-size:16px;margin-bottom:6px">Méthode A — Interface web (sans Git)</h3>
+    <ol class="steps">
+      <li>Sur <code class="inline">github.com</code> : bouton <b>+</b> → <b>New repository</b>. Nom : <code class="inline">stepstore</code>, visibilité <b>Public</b>. Créez le dépôt.</li>
+      <li>Dans le dépôt : <b>Add file → Upload files</b> et glissez le contenu du dossier <code class="inline">dist/</code> (index.html, Code.gs, deploiement.html, manifest.webmanifest, sw.js et le dossier icons/).</li>
+      <li><b>Commit changes</b> avec le message : <code class="inline">StepStore v1 — livrable</code>.</li>
+      <li>Dépôt → <b>Settings → Pages</b> : <b>Source = Deploy from a branch</b>, branche <code class="inline">main</code>, dossier <code class="inline">/ (root)</code>, puis <b>Save</b>.</li>
+      <li>Attendez 1 à 2 minutes : votre boutique est en ligne sur <br /><code class="inline">https://VOTRE-USER.github.io/stepstore/</code></li>
+    </ol>
+
+    <h3 style="font-size:16px;margin:20px 0 6px">Méthode B — Ligne de commande Git</h3>
+    <pre><span class="c"># --- Première publication ---</span>
+git init
+git add .
+git commit -m <span class="o">"StepStore v1 — boutique + admin + WhatsApp"</span>
+git branch -M main
+git remote add origin https://github.com/VOTRE-USER/stepstore.git
+git push -u origin main
+
+<span class="c"># --- Branche de production (alternative recommandée) ---</span>
+git checkout -b gh-pages
+git push origin gh-pages
+
+<span class="c"># --- Puis : Settings → Pages → branche gh-pages → dossier / (root) ---</span>
+
+<span class="c"># --- Mise à jour du site après modification ---</span>
+npm run build          <span class="c"># régénère dist/index.html</span>
+git add dist/index.html
+git commit -m <span class="o">"Mise à jour boutique"</span>
+git push</pre>
+  </div>
+
+  <!-- ============ 3. SHEETS ============ -->
+  <h2><span class="num">3</span> Base de données Google Sheets (fichier Code.gs)</h2>
+  <div class="card">
+    <ol class="steps">
+      <li>Créez un Google Sheet vide : <code class="inline">docs.google.com/spreadsheets</code>.</li>
+      <li>Dans le sheet : <b>Extensions → Apps Script</b>. Effacez le contenu par défaut et collez <b>tout le contenu du fichier <code class="inline">Code.gs</code></b>. Enregistrez (icône 💾).</li>
+      <li><b>Déployer → Nouveau déploiement → Application Web</b> :
+        <ul style="margin:8px 0 0 18px;font-size:14px">
+          <li>Description : <code class="inline">StepStore API</code></li>
+          <li>Exécuter en tant que : <b>Moi</b></li>
+          <li>Qui a accès : <b>Toute personne</b></li>
+        </ul>
+      </li>
+      <li><b>Déployer</b> puis autorisez les permissions demandées (avis « application non vérifiée » → Paramètres avancés → Autoriser).</li>
+      <li>Copiez l'URL « Web app » (elle se termine par <code class="inline">/exec</code>).</li>
+      <li>Test : ouvrez dans un navigateur <code class="inline">…/exec?action=bootstrap</code> — les feuilles <b>Produits</b>, <b>Categories</b> et <b>Parametres</b> se créent automatiquement avec des données d'exemple.</li>
+    </ol>
+    <table>
+      <tr><th>Action API</th><th>Description</th></tr>
+      <tr><td>ping</td><td>Test de connexion (renvoie la version)</td></tr>
+      <tr><td>all / getProducts / getCategories / getSettings</td><td>Lecture des données</td></tr>
+      <tr><td>saveProduct / deleteProduct</td><td>Écriture des articles</td></tr>
+      <tr><td>saveCategory / deleteCategory</td><td>Écriture des catégories</td></tr>
+      <tr><td>saveSettings / syncAll / bootstrap</td><td>Réglages + synchronisation complète</td></tr>
+    </table>
+  </div>
+
+  <!-- ============ 4. CONFIG ADMIN ============ -->
+  <h2><span class="num">4</span> Configurer la boutique (admin)</h2>
+  <div class="card">
+    <ol class="steps">
+      <li>Ouvrez votre boutique, cliquez sur <b>Admin</b> (menu du haut) et connectez-vous :
+        <pre>Mot de passe par défaut : <span class="o">admin123</span></pre>
+      </li>
+      <li><b>Articles</b> : ajoutez / modifiez / supprimez les produits (nom, marque, prix en DA, images par URL ou fichier, couleurs, tailles, stock, popularité).</li>
+      <li><b>Catégories</b> : créez vos catégories (Running, Lifestyle…) avec image et emoji.</li>
+      <li><b>Apparence → Couleurs</b> : changez la couleur principale, le fond et le texte — appliqués instantanément.</li>
+      <li><b>Apparence → Textes</b> : modifiez les titres et messages <b>en français</b> ET <b>en arabe</b> (section « 🌐 Textes en arabe »).</li>
+      <li><b>Apparence → Logo &amp; images</b> : téléversez votre logo et vos images.</li>
+      <li><b>Apparence → 💬 Commande WhatsApp</b> : saisissez le numéro du vendeur au format international sans « + » (ex : <code class="inline">213550123456</code>) puis « Enregistrer ». Cliquez « Envoyer un test » pour vérifier.</li>
+      <li><b>Apparence → 🔐 Sécurité</b> : changez le mot de passe admin.</li>
+    </ol>
+    <div class="ok">✅ Une fois le numéro WhatsApp configuré, le bouton « Commander via WhatsApp » ouvre WhatsApp (wa.me) avec un message prêt : articles, tailles, couleurs, quantités, nom, téléphone, adresse et total en dinars (DZD), dans la langue du client (FR ou AR).</div>
+  </div>
+
+  <!-- ============ 5. DÉPANNAGE ============ -->
+  <h2><span class="num">5</span> Dépannage</h2>
+  <div class="card">
+    <table>
+      <tr><th>Problème</th><th>Solution</th></tr>
+      <tr><td>Écran blanc au chargement</td><td>Un message d'erreur s'affiche automatiquement si l'application ne démarre pas. Rechargez la page ; si le problème persiste, videz le cache du navigateur ou testez dans une fenêtre privée. Vérifiez aussi que le fichier <code class="inline">index.html</code> est complet (recopié intégralement depuis dist/).</td></tr>
+      <tr><td>Le produit 3D ne s'affiche pas</td><td>La vue 3D nécessite une connexion Internet (le modèle est chargé depuis un CDN public) et WebGL. Sans Internet ou sans WebGL, la fiche produit bascule <b>automatiquement sur les photos</b> — c'est normal.</td></tr>
+      <tr><td>Bouton « Commander » désactivé</td><td>Le numéro WhatsApp n'est pas encore configuré : Admin → Apparence → 💬 Commande WhatsApp.</td></tr>
+      <tr><td>Les images de démonstration ne s'affichent pas</td><td>Elles viennent de Pexels (CDN) : une connexion Internet est requise. Remplacez-les par vos propres images dans Admin → Articles.</td></tr>
+      <tr><td>Les modifications ne sont pas conservées</td><td>Elles sont stockées dans le navigateur (localStorage). Pour une base centralisée, utilisez Google Sheets (étape 3) puis rechargez la boutique en mode connecté.</td></tr>
+      <tr><td>Erreur CORS avec Google Sheets</td><td>Vérifiez que l'API est déployée en « Application Web » (et non API exécutable), avec accès « Toute personne », et utilisez bien l'URL qui se termine par /exec.</td></tr>
+    </table>
+  </div>
+
+  <!-- ============ 6. SÉCURITÉ ============ -->
+  <h2><span class="num">6</span> Sécurité &amp; évolution</h2>
+  <div class="warn">
+    <b>Google Sheets n'est pas une base de données sécurisée :</b> toute personne connaissant l'URL /exec peut lire les données.
+    Pour un vrai e-commerce, migrez vers Supabase, Firebase ou une API dédiée — la couche d'accès aux données est isolée et remplaçable en un point unique du code.
+    Le paiement est une redirection WhatsApp : aucun encaissement en ligne.
+  </div>
+
+  <!-- ============ CHECK-LIST ============ -->
+  <h2><span class="num">7</span> Check-list de mise en ligne</h2>
+  <div class="card">
+    <ul class="checklist">
+      <li>Dépôt GitHub créé et fichiers de dist/ envoyés</li>
+      <li>GitHub Pages activé (Settings → Pages → branch → / (root))</li>
+      <li>URL publique vérifiée : https://VOTRE-USER.github.io/stepstore/</li>
+      <li>Google Sheet créé + Code.gs collé + Application Web déployée (URL /exec)</li>
+      <li>Mot de passe admin changé (Apparence → Sécurité)</li>
+      <li>Numéro WhatsApp configuré + test envoyé</li>
+      <li>Catalogue personnalisé (articles + catégories + images)</li>
+      <li>Textes FR et AR personnalisés, logo téléversé</li>
+      <li>Test complet : navigation, panier, commande WhatsApp, vue 3D, version arabe (bouton عربي)</li>
+    </ul>
+  </div>
+
+  <footer>StepStore · Livrable prêt à l'emploi — généré automatiquement avec le build (npm run build)</footer>
+</div>
+</body>
+</html>

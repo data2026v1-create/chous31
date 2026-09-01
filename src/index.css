@@ -136,6 +136,13 @@ h1, h2, h3, h4, h5, h6 {
 .chip-active { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
 .chip-active:hover { color: #fff; }
 
+.card {
+  background: var(--c-bg);
+  border: 1px solid color-mix(in oklab, var(--c-text) 8%, transparent);
+  border-radius: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
 /* ============ Animations ============ */
 @keyframes marquee {
   from { transform: translateX(0); }

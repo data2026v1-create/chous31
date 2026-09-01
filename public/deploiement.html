@@ -102,28 +102,27 @@
 
   <!-- ============ 1. FICHIERS ============ -->
   <h2><span class="num">1</span> Les fichiers à déployer</h2>
-  <p class="sub">Le dossier <code class="inline">dist/</code> (généré par <code class="inline">npm run build</code>) contient <b>exactement</b> les fichiers à déployer&nbsp;:</p>
+  <p class="sub">Le livrable est <b>autonome</b>&nbsp;: la boutique fonctionne en double-cliquant sur le fichier, sans installation ni build&nbsp;:</p>
   <div class="card">
-    <pre>dist/
-├── <span class="o">index.html</span>             ← L'APPLICATION COMPLÈTE (boutique + panier + admin)
+    <pre>stepstore/
+├── <span class="o">boutique.html</span>           ← L'APPLICATION COMPLÈTE (HTML + CSS + JS intégrés)
 │                               · Bilingue FR / AR (RTL) · Devise DZD
 │                               · Produit en 3D interactif (WebGL)
 │                               · Commande par redirection WhatsApp
-│                               · PWA installable (manifest + service worker)
-├── <span class="o">Code.gs</span>               ← à coller dans Google Apps Script (base de données)
+│                               · Panneau d'administration complet
+│                               Renommez-le <span class="o">index.html</span> pour GitHub Pages.
+├── <span class="o">Code.gs</span>               ← code JavaScript de configuration Google Sheets
+│                               (à coller dans Extensions → Apps Script)
 ├── <span class="o">deploiement.html</span>       ← ce guide (facultatif)
-├── manifest.webmanifest      ← PWA : nom, couleurs, icônes
-├── sw.js                     ← PWA : cache hors-ligne
-└── icons/
-    └── icon-512.png          ← icône installable</pre>
+└── <span class="o">DEPLOIEMENT.txt</span>        ← guide en texte brut (facultatif)</pre>
     <table>
       <tr><th>Fichier</th><th>Rôle</th><th>Où le déployer</th></tr>
-      <tr><td>index.html</td><td>Application e-commerce complète (un seul fichier)</td><td>GitHub Pages</td></tr>
+      <tr><td>boutique.html → index.html</td><td>Application e-commerce complète (un seul fichier)</td><td>GitHub Pages</td></tr>
       <tr><td>Code.gs</td><td>API lecture/écriture Google Sheets</td><td>Google Apps Script</td></tr>
       <tr><td>deploiement.html</td><td>Guide de déploiement</td><td>GitHub Pages (optionnel)</td></tr>
-      <tr><td>manifest.webmanifest + sw.js + icons/</td><td>Progressive Web App</td><td>GitHub Pages</td></tr>
+      <tr><td>DEPLOIEMENT.txt</td><td>Guide en texte brut</td><td>Facultatif</td></tr>
     </table>
-    <div class="ok">✅ Le routage est en mode <b>hash</b> : l'application fonctionne sur n'importe quel hébergement statique, sans configuration serveur.</div>
+    <div class="ok">✅ Le routage est en mode <b>hash</b> : l'application fonctionne sur n'importe quel hébergement statique — et même en local, sans serveur (double-clic sur le fichier).</div>
   </div>
 
   <!-- ============ 2. GITHUB ============ -->
@@ -134,7 +133,7 @@
     <h3 style="font-size:16px;margin-bottom:6px">Méthode A — Interface web (sans Git)</h3>
     <ol class="steps">
       <li>Sur <code class="inline">github.com</code> : bouton <b>+</b> → <b>New repository</b>. Nom : <code class="inline">stepstore</code>, visibilité <b>Public</b>. Créez le dépôt.</li>
-      <li>Dans le dépôt : <b>Add file → Upload files</b> et glissez le contenu du dossier <code class="inline">dist/</code> (index.html, Code.gs, deploiement.html, manifest.webmanifest, sw.js et le dossier icons/).</li>
+      <li>Dans le dépôt : <b>Add file → Upload files</b>. Renommez d'abord <code class="inline">boutique.html</code> en <code class="inline">index.html</code>, puis envoyez <code class="inline">index.html</code>, <code class="inline">Code.gs</code> et <code class="inline">deploiement.html</code>.</li>
       <li><b>Commit changes</b> avec le message : <code class="inline">StepStore v1 — livrable</code>.</li>
       <li>Dépôt → <b>Settings → Pages</b> : <b>Source = Deploy from a branch</b>, branche <code class="inline">main</code>, dossier <code class="inline">/ (root)</code>, puis <b>Save</b>.</li>
       <li>Attendez 1 à 2 minutes : votre boutique est en ligne sur <br /><code class="inline">https://VOTRE-USER.github.io/stepstore/</code></li>
@@ -190,12 +189,13 @@ git push</pre>
   </div>
 
   <!-- ============ 4. CONFIG ADMIN ============ -->
-  <h2><span class="num">4</span> Configurer la boutique (admin)</h2>
+  <h2><span class="num">4</span> Configurer la boutique (admin + Sheets + WhatsApp)</h2>
   <div class="card">
     <ol class="steps">
-      <li>Ouvrez votre boutique, cliquez sur <b>Admin</b> (menu du haut) et connectez-vous :
+      <li>Ouvrez <code class="inline">boutique.html</code> (double-clic), cliquez sur <b>Admin</b> (menu du haut) et connectez-vous :
         <pre>Mot de passe par défaut : <span class="o">admin123</span></pre>
       </li>
+      <li><b>Relier Google Sheets</b> : ouvrez <code class="inline">boutique.html</code> dans un éditeur de texte (Bloc-notes), cherchez <code class="inline">var SHEETS_URL = "";</code> et collez votre URL /exec entre les guillemets. Au démarrage, la boutique charge les données de Sheets.</li>
       <li><b>Articles</b> : ajoutez / modifiez / supprimez les produits (nom, marque, prix en DA, images par URL ou fichier, couleurs, tailles, stock, popularité).</li>
       <li><b>Catégories</b> : créez vos catégories (Running, Lifestyle…) avec image et emoji.</li>
       <li><b>Apparence → Couleurs</b> : changez la couleur principale, le fond et le texte — appliqués instantanément.</li>
